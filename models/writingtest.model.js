@@ -7,10 +7,7 @@ const WritingTask = Sequelize.define("WritingTasks", {
         autoIncrement: true,
         primaryKey: true
     },
-    testId: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
+
     taskType: {
         type: DataTypes.ENUM("Task 1", "Task 2"),
         allowNull: false
@@ -22,8 +19,18 @@ const WritingTask = Sequelize.define("WritingTasks", {
     imageUrl: {
         type: DataTypes.STRING,
         allowNull: true,
-    }
-});
+    },
+    testId: {
+        type: DataTypes.INTEGER,
+        allowNull: true, // set to false if a Section must always belong to a Test
+        references: {
+            model: 'Tests', // make sure this matches the table name for Test
+            key: 'id'
+        }
+    },
+
+}
+);
 
 // If you need to define associations, you can do it here
 WritingTask.associate = (models) => {

@@ -57,54 +57,57 @@
 
 require('dotenv').config();
 const axios = require('axios');
-const apikey = process.env.DEEPCSEEK_API_KEY; // Use DeepSeek API Key
-console.log(apikey)
 
-async function fetchDeepSeekResponse(prompt) {
+const apikey = process.env.GOOGLE_GEMINI_API_KEY; // Use Google AI Studio API Key
+console.log(apikey);
+
+async function fetchGoogleAIResponse(prompt) {
     try {
-        // Make sure the request URL and payload match DeepSeek's requirements
+        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+
+        // Make request to Google AI Studio (Gemini API)
         const response = await axios.post(
-            'https://api.deepseek.ai/v1/essay-evaluation',  // Replace with correct URL
+            apiUrl,
             {
-                text: prompt, // Body parameter to send essay
-                language: 'en', // Language parameter, adjust if needed
-                evaluation_type: 'IELTS',  // If DeepSeek expects this specific field
+                contents: [{ role: 'user', parts: [{ text: `Evaluate this IELTS essay and provide a band score with feedback: ${prompt}` }] }],
             },
             {
                 headers: {
-                    'Authorization': `Bearer ${apikey}`, // API key for authentication
-                    'Content-Type': 'application/json',  // JSON body type
+                    'Authorization': `Bearer ${apikey}`,
+                    'Content-Type': 'application/json',
+                },
+                params: {
+                    key: apikey, // API key passed as query parameter
                 },
             }
         );
 
-        // Log the full response to understand its structure
-        console.log('DeepSeek Response:', response.data);
+        console.log('Google AI Response:', response.data);
 
-        // Assuming the structure of the response contains 'evaluation' field
-        // Adjust the field names if necessary based on actual API response structure
-        return response.data.evaluation || response.data;  // Ensure we return evaluation or the whole response if needed
+        // Extract text response from Google's Gemini API
+        const evaluationText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received';
+
+        return evaluationText;
 
     } catch (error) {
-        console.error('Error fetching DeepSeek response:', error.message);
+        console.error('Error fetching Google AI response:', error.message);
 
-        // Log full error details
         if (error.response) {
-            console.error('DeepSeek API Error Response:', error.response.data);
+            console.error('Google AI API Error Response:', error.response.data);
         } else if (error.request) {
-            console.error('No response received from DeepSeek:', error.request);
+            console.error('No response received from Google AI:', error.request);
         } else {
             console.error('Error setting up request:', error.message);
         }
 
-        throw new Error('Failed to fetch DeepSeek response');
+        throw new Error('Failed to fetch Google AI response');
     }
 }
 
 // Function to extract the band score from the evaluation text
 function extractBandScore(evaluationText) {
-    const scoreMatch = evaluationText.match(/Band (\d+)/);
-    return scoreMatch ? parseInt(scoreMatch[1]) : 0;
+    const scoreMatch = evaluationText.match(/Band (\d+(\.\d+)?)/); // Supports decimal scores
+    return scoreMatch ? parseFloat(scoreMatch[1]) : 0;
 }
 
 // Function to extract feedback from the evaluation text
@@ -114,7 +117,7 @@ function extractFeedback(evaluationText) {
 }
 
 module.exports = {
-    fetchDeepSeekResponse,
+    fetchGoogleAIResponse,
     extractBandScore,
     extractFeedback
 };

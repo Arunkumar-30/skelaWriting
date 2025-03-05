@@ -9,15 +9,27 @@ const Score = Sequelize.define("Scores", {
     },
     userId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: null,
+        references: {
+            model: 'users',
+            key: 'id'
+        }
     },
     testId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: true,  // Change to false if every section must belong to a test
+        references: {
+            model: 'Tests',
+            key: 'id'
+        }
     },
     taskId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        references: {
+            model: 'WritingTasks',
+            key: 'id'
+        }
     },
     score: {
         type: DataTypes.FLOAT,

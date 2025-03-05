@@ -26,6 +26,10 @@ const User = Sequelize.define('users', {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
     },
+}, {
+    tableName: 'users',
+    timestamps: false, // adds createdAt and updatedAt fields}
+
 });
 
 module.exports = User;
