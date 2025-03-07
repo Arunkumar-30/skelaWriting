@@ -58,66 +58,76 @@
 require('dotenv').config();
 const axios = require('axios');
 
-const apikey = process.env.GOOGLE_GEMINI_API_KEY; // Use Google AI Studio API Key
-console.log(apikey);
+const apikey = "AIzaSyBADxJPDHu3GLbY2nU-m6ZtkDnbCo6wNjU"; // Google AI Studio API Key
 
-async function fetchGoogleAIResponse(prompt) {
+
+// Generate a structured IELTS Writing Evaluation Prompt
+function generateIELTSEvaluationPrompt(userResponse) {
+    return `Evaluate this IELTS Writing Task response strictly based on IELTS scoring criteria:
+    
+    1. **Band Score (0-9)**
+    2. **Detailed Feedback on Coherence, Cohesion, Grammar, and Lexical Resource**
+    3. **List of Mistakes with Corrections**
+    
+    ---
+    
+    **User Response:**  
+    "${userResponse}"
+    
+    Provide a structured response with headings for each section.
+    `;
+}
+
+async function fetchGoogleAIResponse(userResponse) {
     try {
-        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+        const prompt = generateIELTSEvaluationPrompt(userResponse);
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apikey}`; // ✅ Ensure this is correct
 
-        // Make request to Google AI Studio (Gemini API)
         const response = await axios.post(
             apiUrl,
             {
-                contents: [{ role: 'user', parts: [{ text: `Evaluate this IELTS essay and provide a band score with feedback: ${prompt}` }] }],
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
             },
             {
                 headers: {
-                    'Authorization': `Bearer ${apikey}`,
                     'Content-Type': 'application/json',
-                },
-                params: {
-                    key: apikey, // API key passed as query parameter
-                },
+                }
             }
         );
 
         console.log('Google AI Response:', response.data);
 
-        // Extract text response from Google's Gemini API
-        const evaluationText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received';
-
-        return evaluationText;
+        return response.data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received';
 
     } catch (error) {
         console.error('Error fetching Google AI response:', error.message);
-
-        if (error.response) {
-            console.error('Google AI API Error Response:', error.response.data);
-        } else if (error.request) {
-            console.error('No response received from Google AI:', error.request);
-        } else {
-            console.error('Error setting up request:', error.message);
-        }
-
+        if (error.response) console.error('Google AI API Error Response:', error.response.data);
         throw new Error('Failed to fetch Google AI response');
     }
 }
 
-// Function to extract the band score from the evaluation text
+
+// Extract Band Score from AI Response
 function extractBandScore(evaluationText) {
-    const scoreMatch = evaluationText.match(/Band (\d+(\.\d+)?)/); // Supports decimal scores
-    return scoreMatch ? parseFloat(scoreMatch[1]) : 0;
+    const match = evaluationText.match(/Band Score:\s*(\d+(\.\d+)?)/i);
+    return match ? parseFloat(match[1]) : null;
 }
 
-// Function to extract feedback from the evaluation text
+// Extract Feedback from AI Response
 function extractFeedback(evaluationText) {
-    const feedbackMatch = evaluationText.match(/Feedback:\s*(.*)/);
-    return feedbackMatch ? feedbackMatch[1] : 'No feedback available';
+    const match = evaluationText.match(/Feedback:\s*(.+)/i);
+    return match ? match[1] : 'No feedback provided';
+}
+
+// Extract Mistakes from AI Response
+function extractMistakes(evaluationText) {
+    const match = evaluationText.match(/Mistakes:\s*(.+)/i);
+    return match ? match[1] : 'No mistakes detected';
 }
 
 module.exports = {
     fetchGoogleAIResponse,
     extractBandScore,
-    extractFeedback
+    extractFeedback,
+    extractMistakes
 };
