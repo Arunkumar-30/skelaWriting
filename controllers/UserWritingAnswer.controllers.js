@@ -172,12 +172,14 @@ const addWritingAnswer = async (req, res) => {
 
             // ✅ Move fetching the question **inside** the loop
             const task = await writingtest.findOne({ where: { id: answer.taskId } });
+            console.log(task)
 
             if (!task) {
                 return res.status(404).json({ message: `Task with id ${answer.taskId} not found` });
             }
 
-            const question = task.question; // Fetch the corresponding question
+            const question = task.prompt; // Fetch the corresponding question
+
 
             // Combine the question and response for AI evaluation
             const evaluationPrompt = `IELTS Writing Task Evaluation:\n\n**Question:** ${question}\n\n**User Response:** ${answer.userResponse}`;
